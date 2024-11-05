@@ -7,6 +7,9 @@ const db = mysql.createConnection({
     database: 'altitudeIt'
 });
 
+const promiseDb = db.promise();
+
+
 db.connect(err => {
     if (err) {
         console.error('Error connecting to the database:', err);
@@ -15,4 +18,4 @@ db.connect(err => {
     console.log('Connected to the database.');
 });
 
-module.exports = db;
+module.exports = promiseDb;

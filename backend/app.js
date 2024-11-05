@@ -1,11 +1,12 @@
 const express = require('express');
+const cors = require('cors')
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const db = require('./db');
 const { sendOrderConfirmationEmail } = require('./services/emailService'); // Adjust the path as needed
 const app = express();
 app.use(express.json());
-
+app.use(cors());
 
 async function sendVerificationEmail(email, code) {
     try {
@@ -17,61 +18,51 @@ async function sendVerificationEmail(email, code) {
     }
 }
 
-
 app.post('/register', async(req, res) => {
-    const { ime, prezime, email, password, datum_rodjenja } = req.body;
+    const { firstName, lastName, email, password, birthDate } = req.body;
 
-    // Hashovanje lozinke
-    const hashedPassword = await bcrypt.hash(password, 10);
+    try {
+        // Proveri da li email već postoji
+        const [existingUser] = await db.query('SELECT * FROM User WHERE email = ?', [email]);
 
-    // Generisanje verifikacionog koda
-    const verificationCode = Math.floor(100000 + Math.random() * 900000); // 6-cifreni kod
-
-    // Umetanje novog korisnika
-    db.query('INSERT INTO User (ime, prezime, email, password, datum_rodjenja, role_id) VALUES (?, ?, ?, ?, ?, ?)', [ime, prezime, email, hashedPassword, datum_rodjenja, 1],
-        (error, results) => {
-            if (error) {
-                // Proverite da li je greška vezana za jedinstveni email
-                if (error.code === 'ER_DUP_ENTRY') {
-                    return res.status(400).json({ error: 'Email already in use' });
-                }
-                return res.status(500).json({ error: 'Error registering user' });
-            }
-
-            const userId = results.insertId;
-
-            // Umetanje podataka o verifikaciji sa verifikacionim kodom
-            db.query('INSERT INTO Verified (user_id, isVerificated, verificationCode) VALUES (?, false, ?)', [userId, verificationCode],
-                async(error) => {
-                    if (error) {
-                        return res.status(500).json({ error: 'Error adding verification info' });
-                    }
-
-                    try {
-                        await sendVerificationEmail(email, verificationCode); // Čekamo da se email pošalje
-                        res.status(201).json({ message: 'User registered. Check your email for verification code.' });
-                    } catch (sendError) {
-                        return res.status(500).json({ error: sendError.message }); // Vraćamo grešku ako slanje ne uspe
-                    }
-                }
-            );
+        if (existingUser.length > 0) {
+            return res.status(400).json({ error: 'Email already in use' });
         }
-    );
+
+        // Hashovanje lozinke
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Generisanje verifikacionog koda
+        const verificationCode = Math.floor(100000 + Math.random() * 900000); // 6-cifreni kod
+
+        // Umetanje novog korisnika
+        const [results] = await db.query('INSERT INTO User (ime, prezime, email, password, datum_rodjenja, role_id) VALUES (?, ?, ?, ?, ?, ?)', [firstName, lastName, email, hashedPassword, birthDate, 1]);
+
+        const userId = results.insertId;
+
+        // Umetanje podataka o verifikaciji sa verifikacionim kodom
+        await db.query('INSERT INTO Verified (user_id, isVerificated, verificationCode) VALUES (?, false, ?)', [userId, verificationCode]);
+
+        // Pošalji verifikacioni email
+        await sendVerificationEmail(email, verificationCode);
+        res.status(201).json({ message: 'User registered. Check your email for verification code.' });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error registering user' });
+    }
 });
 
 app.post('/login', async(req, res) => {
     const { email, password, verificationCode } = req.body;
 
-    // Dohvatimo podatke o korisniku
-    db.query('SELECT * FROM User WHERE email = ?', [email], async(error, results) => {
-        if (error) {
-            return res.status(500).json({ error: 'Error querying database' });
-        }
+    try {
+        // Dohvatimo podatke o korisniku
+        const [results] = await db.query('SELECT * FROM User WHERE email = ?', [email]);
 
         if (results.length === 0) {
             return res.status(400).json({ error: 'Invalid email or password' });
         }
-
         const user = results[0];
 
         // Provera lozinke
@@ -80,67 +71,93 @@ app.post('/login', async(req, res) => {
             return res.status(400).json({ error: 'Invalid email or password' });
         }
 
+        console.log('prosli 2')
+
         // Proverimo da li je korisnik verifikovan
-        db.query('SELECT * FROM Verified WHERE user_id = ? AND isVerificated = true', [user.id], async(error, verificationResults) => {
-            if (error) {
-                return res.status(500).json({ error: 'Error querying verification data' });
+        const [verificationResults] = await db.query('SELECT * FROM Verified WHERE user_id = ? AND isVerificated = true', [user.id]);
+
+        // Ako korisnik nije verifikovan
+        if (verificationResults.length === 0) {
+            if (!verificationCode) {
+                return res.status(403).json({ error: 'Account not verified. Please enter your verification code.' });
             }
 
-            // Ako korisnik nije verifikovan
-            if (verificationResults.length === 0) {
-                if (!verificationCode) {
-                    return res.status(403).json({ error: 'Account not verified. Please enter your verification code.' });
+            // Ako je unet verifikacioni kod, proverimo ga
+            const [codeResults] = await db.query('SELECT * FROM Verified WHERE user_id = ? AND verificationCode = ?', [user.id, verificationCode]);
+            if (codeResults.length === 0) {
+                return res.status(400).json({ error: 'Invalid verification code' });
+            }
+
+            // Ažuriranje isVerificated u tabeli Verified i isActive u tabeli User
+            await db.query('UPDATE Verified SET isVerificated = true WHERE user_id = ?', [user.id]);
+            await db.query('UPDATE User SET isActive = true WHERE id = ?', [user.id]);
+
+            // Login uspešan nakon verifikacije
+            return res.status(200).json({
+                message: 'Login successful and account verified',
+                user: {
+                    id: user.id,
+                    ime: user.ime,
+                    prezime: user.prezime,
+                    email: user.email
                 }
-
-                // Ako je unet verifikacioni kod, proverimo ga
-                db.query('SELECT * FROM Verified WHERE user_id = ? AND verificationCode = ?', [user.id, verificationCode], (error, codeResults) => {
-                    if (error) {
-                        return res.status(500).json({ error: 'Error verifying code' });
-                    }
-
-                    if (codeResults.length === 0) {
-                        return res.status(400).json({ error: 'Invalid verification code' });
-                    }
-
-                    // Ažuriranje isVerificated u tabeli Verified i isActive u tabeli User
-                    db.query('UPDATE Verified SET isVerificated = true WHERE user_id = ?', [user.id], async(error) => {
-                        if (error) {
-                            return res.status(500).json({ error: 'Error updating verification status' });
-                        }
-                        // Ažuriranje isActive u tabeli User na true
-                        db.query('UPDATE User SET isActive = true WHERE id = ?', [user.id], (error) => {
-                            if (error) {
-                                return res.status(500).json({ error: 'Error updating user active status' });
-                            }
-
-                            // Login uspešan nakon verifikacije
-                            res.status(200).json({
-                                message: 'Login successful and account verified',
-                                user: {
-                                    id: user.id,
-                                    ime: user.ime,
-                                    prezime: user.prezime,
-                                    email: user.email
-                                }
-                            });
-                        });
-                    });
-                });
-            } else {
-                // Ako je korisnik već verifikovan, dozvoli login
-                res.status(200).json({
-                    message: 'Login successful',
-                    user: {
-                        id: user.id,
-                        ime: user.ime,
-                        prezime: user.prezime,
-                        email: user.email
-                    }
-                });
-            }
-        });
-    });
+            });
+        } else {
+            // Ako je korisnik već verifikovan, dozvoli login
+            return res.status(200).json({
+                message: 'Login successful',
+                user: {
+                    id: user.id,
+                    ime: user.ime,
+                    prezime: user.prezime,
+                    email: user.email
+                }
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Error during login process' });
+    }
 });
+
+// Ruta za proveru verifikacije korisničkog naloga
+app.post('/check-verification', async(req, res) => {
+    const { email } = req.body; // Prima email umesto user_id
+
+    if (!email) {
+        return res.status(400).json({ message: 'Email je obavezan.' });
+    }
+
+    try {
+        // Prvo pronađi userId na osnovu emaila
+        const [userRows] = await db.query(
+            'SELECT id FROM user WHERE email = ?', [email]
+        );
+
+        if (userRows.length === 0) {
+            return res.status(404).json({ message: 'Korisnik nije pronađen.' });
+        }
+
+        const userId = userRows[0].id;
+        // Zatim proveri status verifikacije
+        const [verificationRows] = await db.query(
+            'SELECT isVerificated FROM verified WHERE user_id = ?', [userId]
+        );
+
+        if (verificationRows.length === 0) {
+            return res.status(404).json({ message: 'Verifikacija nije pronađena.' });
+        }
+
+        const isVerificated = verificationRows[0].isVerificated;
+
+        // Vraća status verifikacije kao boolean vrednost
+        res.json({ isVerificated });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Došlo je do greške prilikom provere verifikacije.' });
+    }
+});
+
 
 
 // Pokretanje servera
