@@ -10,7 +10,8 @@ const Register: React.FC = () => {
     const [birthDate, setBirthDate] = useState<string>('');
     const [error, setError] = useState<string>('');
     const [successMessage, setSuccessMessage] = useState<string>('');
-    const navigate = useNavigate(); // Koristimo useNavigate
+    const navigate = useNavigate();
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,8 +26,10 @@ const Register: React.FC = () => {
         try {
             await registerUser({ firstName, lastName, email, password, birthDate });
             setSuccessMessage('Uspešno ste se registrovali!');
+
             // Preusmeravanje na stranicu za prijavu
             navigate('/login', { state: { email, notVerified: true } });
+
         } catch (err: any) {
             setError(err.message || 'Došlo je do greške prilikom registracije.');
         }

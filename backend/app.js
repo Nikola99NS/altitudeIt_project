@@ -1,7 +1,9 @@
 const express = require('express');
-const cors = require('cors')
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 const db = require('./db');
 const { sendOrderConfirmationEmail } = require('./services/emailService'); // Adjust the path as needed
 const app = express();
@@ -71,11 +73,10 @@ app.post('/login', async(req, res) => {
             return res.status(400).json({ error: 'Invalid email or password' });
         }
 
-        console.log('prosli 2')
 
         // Proverimo da li je korisnik verifikovan
         const [verificationResults] = await db.query('SELECT * FROM Verified WHERE user_id = ? AND isVerificated = true', [user.id]);
-
+        const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
         // Ako korisnik nije verifikovan
         if (verificationResults.length === 0) {
             if (!verificationCode) {
@@ -95,22 +96,26 @@ app.post('/login', async(req, res) => {
             // Login uspešan nakon verifikacije
             return res.status(200).json({
                 message: 'Login successful and account verified',
+                token: token,
                 user: {
                     id: user.id,
                     ime: user.ime,
                     prezime: user.prezime,
-                    email: user.email
+                    email: user.email,
+                    dateBirth: user.datum_rodjenja
                 }
             });
         } else {
             // Ako je korisnik već verifikovan, dozvoli login
             return res.status(200).json({
                 message: 'Login successful',
+                token: token,
                 user: {
                     id: user.id,
                     ime: user.ime,
                     prezime: user.prezime,
-                    email: user.email
+                    email: user.email,
+                    dateBirth: user.datum_rodjenja
                 }
             });
         }

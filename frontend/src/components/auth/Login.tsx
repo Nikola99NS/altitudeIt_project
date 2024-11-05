@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthProvider';
 import { checkEmailVerification, loginUser } from '../../services/authService';
 
 const Login: React.FC = () => {
@@ -12,7 +11,6 @@ const Login: React.FC = () => {
     const [error, setError] = useState<string>('');
     const navigate = useNavigate();
 
-    const { login } = useAuth();
 
 
     const notVerified = location.state?.notVerified || false;
@@ -38,8 +36,17 @@ const Login: React.FC = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await loginUser({ email, password, verificationCode });
-            login();
+            const responseData = await loginUser({ email, password, verificationCode });
+
+            // localStorage.setItem('token', responseData.token);
+            sessionStorage.setItem("token", responseData.token)
+            localStorage.setItem('user', JSON.stringify({
+                id: responseData.user.id,
+                ime: responseData.user.ime,
+                prezime: responseData.user.prezime,
+                email: responseData.user.email,
+                dateBirth: responseData.user.dateBirth
+            }));
             navigate('/')
 
         } catch (err: any) {

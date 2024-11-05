@@ -18,7 +18,6 @@ export const registerUser = async (userData: {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.log(errorData.error);
       throw new Error(errorData.error || "Greška prilikom registracije");
     }
     return await response.json();
@@ -67,7 +66,7 @@ export const loginUser = async ({
   email: string;
   password: string;
   verificationCode?: string;
-}): Promise<void> => {
+}): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/login`, {
       method: "POST",
@@ -77,10 +76,14 @@ export const loginUser = async ({
       body: JSON.stringify({ email, password, verificationCode }),
     });
 
+    const responseData = await response.json();
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || "Neuspešna prijava.");
     }
+
+    return responseData;
   } catch (error) {
     throw new Error(
       error instanceof Error ? error.message : "Greška prilikom prijave."
