@@ -79,10 +79,9 @@ export const loginUser = async ({
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Neuspešna prijava.");
+      throw new Error(errorData.error || "Neuspešna prijava.");
     }
   } catch (error) {
-    console.error(error);
     throw new Error(
       error instanceof Error ? error.message : "Greška prilikom prijave."
     );
