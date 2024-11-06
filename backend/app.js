@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 const db = require('./db');
@@ -9,6 +11,11 @@ const { sendOrderConfirmationEmail } = require('./services/emailService'); // Ad
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+
+app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')));
+
+
 
 async function sendVerificationEmail(email, code) {
     try {
@@ -55,6 +62,37 @@ app.post('/register', async(req, res) => {
     }
 });
 
+// Ruta za proveru verifikacije korisničkog naloga
+app.post('/check-verification', async(req, res) => {
+    const { email } = req.body; // Prima email umesto user_id
+    if (!email) {
+        return res.status(400).json({ message: 'Email je obavezan.' });
+    }
+    try {
+        // Prvo pronađi userId na osnovu emaila
+        const [userRows] = await db.query(
+            'SELECT id FROM user WHERE email = ?', [email]
+        );
+        if (userRows.length === 0) {
+            return res.status(404).json({ message: 'Korisnik nije pronađen.' });
+        }
+        const userId = userRows[0].id;
+        // Zatim proveri status verifikacije
+        const [verificationRows] = await db.query(
+            'SELECT isVerificated FROM verified WHERE user_id = ?', [userId]
+        );
+        if (verificationRows.length === 0) {
+            return res.status(404).json({ message: 'Verifikacija nije pronađena.' });
+        }
+        const isVerificated = verificationRows[0].isVerificated;
+        // Vraća status verifikacije kao boolean vrednost
+        res.json({ isVerificated });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Došlo je do greške prilikom provere verifikacije.' });
+    }
+});
+
 app.post('/login', async(req, res) => {
     const { email, password, verificationCode } = req.body;
 
@@ -92,7 +130,6 @@ app.post('/login', async(req, res) => {
             // Ažuriranje isVerificated u tabeli Verified i isActive u tabeli User
             await db.query('UPDATE Verified SET isVerificated = true WHERE user_id = ?', [user.id]);
             await db.query('UPDATE User SET isActive = true WHERE id = ?', [user.id]);
-
             // Login uspešan nakon verifikacije
             return res.status(200).json({
                 message: 'Login successful and account verified',
@@ -115,7 +152,8 @@ app.post('/login', async(req, res) => {
                     ime: user.ime,
                     prezime: user.prezime,
                     email: user.email,
-                    dateBirth: user.datum_rodjenja
+                    dateBirth: user.datum_rodjenja,
+                    urlSlike: user.urlSlike
                 }
             });
         }
@@ -128,7 +166,6 @@ app.post('/login', async(req, res) => {
 // Ruta za proveru verifikacije korisničkog naloga
 app.post('/check-password', async(req, res) => {
     const { email, password } = req.body;
-
     try {
         // Prvo pronađite korisnika u bazi podataka po emailu
         const [results] = await db.query('SELECT * FROM user WHERE email = ?', [email]);
@@ -173,6 +210,98 @@ app.post('/update-password', async(req, res) => {
         res.status(500).json({ success: false });
     }
 });
+
+
+// Konfiguracija za čuvanje slika
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/images'); // direktorijum gde će se čuvati slike
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
+});
+
+const upload = multer({ storage });
+
+app.post('/upload-profile-image', upload.single('profileImage'), async(req, res) => {
+    const { email } = req.body;
+
+    try {
+        // Proveri da li je fajl uspešno uploadovan
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: "No file uploaded" });
+        }
+        const profileImageUrl = `/uploads/images/${req.file.filename}`; // Putanja do slike
+        // SQL upit za ažuriranje URL-a profilne slike
+        const sql = 'UPDATE user SET urlSlike = ? WHERE email = ?';
+        const [results] = await db.query(sql, [profileImageUrl, email]);
+        // Provera rezultata
+        if (results.affectedRows > 0) {
+            console.log('Profile image updated successfully');
+            res.json({ success: true, profileImageUrl });
+        } else {
+            console.log('User not found');
+            res.status(404).json({ success: false, message: "User not found" });
+        }
+    } catch (error) {
+        // Hvatanje grešaka
+        console.error("Error updating profile image:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+});
+
+
+
+app.post("/update-user-info", async(req, res) => {
+    const { email, name, surname, birthdate } = req.body;
+
+    // Priprema promenljivih za SQL upit
+    let sql = "UPDATE user SET ";
+    const values = [];
+
+    try {
+        // Dinamički dodajemo polja koja treba ažurirati
+        if (name) {
+            sql += "ime = ?, ";
+            values.push(name);
+        }
+        if (surname) {
+            sql += "prezime = ?, ";
+            values.push(surname);
+        }
+        if (birthdate) {
+            sql += "datum_rodjenja = ?, ";
+            values.push(birthdate);
+        }
+        // if (imageUrl) {
+        //     sql += "urlSlike = ?, ";
+        //     values.push();
+        // }
+
+        // Uklanjamo višak zarez sa kraja i dodajemo WHERE uslov
+        sql = sql.slice(0, -2); // Skida poslednji zarez
+        sql += " WHERE email = ?";
+        values.push(email);
+        // Ako nema polja za ažuriranje, vraćamo poruku
+        if (values.length === 1) {
+            return res.status(400).json({ success: false, message: "No fields to update" });
+        }
+
+        // Izvršavanje SQL upita
+        const [result] = await db.query(sql, values)
+        if (result.affectedRows > 0) {
+            res.json({ success: true });
+        } else {
+            res.json({ success: false });
+        }
+    } catch (error) {
+        // Hvatanje bilo kakve greške tokom obrade
+        console.error("Error in update-user-info route:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+});
+
 
 
 // Pokretanje servera

@@ -109,7 +109,6 @@ export const checkPassword = async ({ email, password }: LoginCredentials) => {
     if (!response.ok) {
       throw new Error("Login failed");
     }
-
     const data = await response.json();
     return data.success;
   } catch (error) {
@@ -134,5 +133,77 @@ export const updatePassword = async ({ email, newPassword }: any) => {
     return data.success;
   } catch (error) {
     return false;
+  }
+};
+
+export const saveUserInfo = async ({
+  email,
+  name,
+  surname,
+  birthdate,
+}: any) => {
+  try {
+    const response = await fetch("http://localhost:5000/update-user-info", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, name, surname, birthdate }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update user info");
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      // Ažuriraj localStorage samo ako je ažuriranje bilo uspešno
+      const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+
+      // Ažuriraj samo ona polja koja su prosleđena
+      if (name) userInfo.ime = name;
+      if (surname) userInfo.prezime = surname;
+      if (birthdate) userInfo.dateBirth = birthdate;
+
+      // Snimi nazad u localStorage
+      localStorage.setItem("user", JSON.stringify(userInfo));
+
+      return data;
+    } else {
+      return { success: false, message: data.message };
+    }
+  } catch (error) {
+    console.error("Error updating user info:", error);
+    return false;
+  }
+};
+
+export const uploadProfileImage = async ({ email, profileImage }: any) => {
+  const formData = new FormData();
+  formData.append("profileImage", profileImage);
+  formData.append("email", email);
+
+  try {
+    const response = await fetch("http://localhost:5000/upload-profile-image", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      // Ažuriraj localStorage sa novim URL-om profilne slike
+      const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
+      userInfo.urlSlike = `${API_URL}${data.profileImageUrl}`;
+      localStorage.setItem("user", JSON.stringify(userInfo));
+
+      return data.profileImageUrl;
+    } else {
+      throw new Error("Failed to upload profile image.");
+    }
+  } catch (error) {
+    console.error("Error uploading profile image:", error);
+    return null;
   }
 };

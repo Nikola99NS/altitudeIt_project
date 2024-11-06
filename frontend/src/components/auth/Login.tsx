@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { checkEmailVerification, loginUser } from '../../services/authService';
 
+const API_URL = "http://localhost:5000";
+
+
 const Login: React.FC = () => {
     const location = useLocation();
     const [email, setEmail] = useState<string>(location.state?.email || '');
@@ -15,9 +18,11 @@ const Login: React.FC = () => {
 
     const notVerified = location.state?.notVerified || false;
 
+    console.log(notVerified)
 
     useEffect(() => {
         if (email && notVerified) {
+            console.log('usli ovde ')
             const checkVerificationStatus = async () => {
                 try {
                     const isVerified = await checkEmailVerification(email);
@@ -38,6 +43,7 @@ const Login: React.FC = () => {
         try {
             const responseData = await loginUser({ email, password, verificationCode });
 
+            console.log(API_URL + responseData.user.urlSlike)
             // localStorage.setItem('token', responseData.token);
             sessionStorage.setItem("token", responseData.token)
             localStorage.setItem('user', JSON.stringify({
@@ -45,7 +51,8 @@ const Login: React.FC = () => {
                 ime: responseData.user.ime,
                 prezime: responseData.user.prezime,
                 email: responseData.user.email,
-                dateBirth: responseData.user.dateBirth
+                dateBirth: new Date(responseData.user.dateBirth).toISOString().slice(0, 10),
+                urlSlike: API_URL + responseData.user.urlSlike
             }));
             navigate('/')
 

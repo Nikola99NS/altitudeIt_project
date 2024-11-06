@@ -7,7 +7,7 @@ const Register: React.FC = () => {
     const [lastName, setLastName] = useState<string>('');
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
-    const [birthDate, setBirthDate] = useState<string>('');
+    const [birthDate, setBirthDate] = useState(new Date().toISOString().slice(0, 10));
     const [error, setError] = useState<string>('');
     const [successMessage, setSuccessMessage] = useState<string>('');
     const navigate = useNavigate();
