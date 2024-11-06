@@ -42,8 +42,6 @@ const Login: React.FC = () => {
         e.preventDefault();
         try {
             const responseData = await loginUser({ email, password, verificationCode });
-
-            console.log(API_URL + responseData.user.urlSlike)
             // localStorage.setItem('token', responseData.token);
             sessionStorage.setItem("token", responseData.token)
             localStorage.setItem('user', JSON.stringify({
@@ -52,7 +50,8 @@ const Login: React.FC = () => {
                 prezime: responseData.user.prezime,
                 email: responseData.user.email,
                 dateBirth: new Date(responseData.user.dateBirth).toISOString().slice(0, 10),
-                urlSlike: API_URL + responseData.user.urlSlike
+                urlSlike: API_URL + responseData.user.urlSlike,
+                roleId: responseData.user.role_id
             }));
             navigate('/')
 

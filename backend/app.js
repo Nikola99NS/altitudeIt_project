@@ -8,6 +8,7 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 const db = require('./db');
 const { sendOrderConfirmationEmail } = require('./services/emailService'); // Adjust the path as needed
+const { response } = require('express');
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -104,7 +105,6 @@ app.post('/login', async(req, res) => {
             return res.status(400).json({ error: 'Invalid email or password' });
         }
         const user = results[0];
-
         // Provera lozinke
         const isPasswordMatch = await bcrypt.compare(password, user.password);
         if (!isPasswordMatch) {
@@ -153,7 +153,8 @@ app.post('/login', async(req, res) => {
                     prezime: user.prezime,
                     email: user.email,
                     dateBirth: user.datum_rodjenja,
-                    urlSlike: user.urlSlike
+                    urlSlike: user.urlSlike,
+                    role_id: user.role_id
                 }
             });
         }
@@ -302,6 +303,17 @@ app.post("/update-user-info", async(req, res) => {
     }
 });
 
+
+app.get('/users', async(req, res) => {
+    try {
+        const [users] = await db.query('SELECT * FROM user WHERE role_id = 1');
+        console.log(users)
+        res.json(users);
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching users' });
+    }
+});
 
 
 // Pokretanje servera
