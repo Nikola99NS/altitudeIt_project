@@ -126,43 +126,53 @@ app.post('/login', async(req, res) => {
 });
 
 // Ruta za proveru verifikacije korisničkog naloga
-app.post('/check-verification', async(req, res) => {
-    const { email } = req.body; // Prima email umesto user_id
-
-    if (!email) {
-        return res.status(400).json({ message: 'Email je obavezan.' });
-    }
+app.post('/check-password', async(req, res) => {
+    const { email, password } = req.body;
 
     try {
-        // Prvo pronađi userId na osnovu emaila
-        const [userRows] = await db.query(
-            'SELECT id FROM user WHERE email = ?', [email]
-        );
+        // Prvo pronađite korisnika u bazi podataka po emailu
+        const [results] = await db.query('SELECT * FROM user WHERE email = ?', [email]);
 
-        if (userRows.length === 0) {
-            return res.status(404).json({ message: 'Korisnik nije pronađen.' });
+        // Proverite da li je korisnik pronađen
+        if (results.length === 0) {
+            return res.status(401).json({ success: false, message: 'User not found' });
         }
 
-        const userId = userRows[0].id;
-        // Zatim proveri status verifikacije
-        const [verificationRows] = await db.query(
-            'SELECT isVerificated FROM verified WHERE user_id = ?', [userId]
-        );
+        const user = results[0];
 
-        if (verificationRows.length === 0) {
-            return res.status(404).json({ message: 'Verifikacija nije pronađena.' });
+        // Uporedite unesenu lozinku sa enkriptovanom lozinkom
+        const match = await bcrypt.compare(password, user.password);
+
+        if (match) {
+            // Lozinka je tačna
+            return res.status(200).json({ success: true, message: 'Password is correct' });
+        } else {
+            // Lozinka nije tačna
+            return res.status(401).json({ success: false, message: 'Incorrect password' });
         }
-
-        const isVerificated = verificationRows[0].isVerificated;
-
-        // Vraća status verifikacije kao boolean vrednost
-        res.json({ isVerificated });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Došlo je do greške prilikom provere verifikacije.' });
+    } catch (err) {
+        console.error('Error checking password:', err);
+        return res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
+
+app.post('/update-password', async(req, res) => {
+    const { email, newPassword } = req.body;
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const [result] = await db.query('UPDATE user SET password = ? WHERE email = ?', [hashedPassword, email]);
+
+        if (result.affectedRows > 0) {
+            res.json({ success: true });
+        } else {
+            res.json({ success: false });
+        }
+    } catch (error) {
+        console.error('Greška pri ažuriranju lozinke:', error);
+        res.status(500).json({ success: false });
+    }
+});
 
 
 // Pokretanje servera

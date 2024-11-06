@@ -90,3 +90,49 @@ export const loginUser = async ({
     );
   }
 };
+
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export const checkPassword = async ({ email, password }: LoginCredentials) => {
+  try {
+    const response = await fetch(`${API_URL}/check-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Login failed");
+    }
+
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error("Login error:", error);
+    return false;
+  }
+};
+
+export const updatePassword = async ({ email, newPassword }: any) => {
+  try {
+    const response = await fetch("http://localhost:5000/update-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, newPassword }),
+    });
+    if (!response.ok) {
+      throw new Error("Update password failed");
+    }
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    return false;
+  }
+};
