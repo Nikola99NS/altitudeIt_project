@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { checkPassword, saveUserInfo, updatePassword, uploadProfileImage } from '../services/authService';
+import { activeProfile, checkPassword, saveUserInfo, updatePassword, uploadProfileImage } from '../services/authService';
 
 const API_URL = "http://localhost:5000";
 
@@ -8,7 +8,6 @@ const Profile: React.FC = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const email = user.email;
 
-    console.log(user.roleId)
 
     const [usersList, setUsersList] = useState<any[]>([]); // Drži korisnike u state-u
 
@@ -123,10 +122,8 @@ const Profile: React.FC = () => {
         if (user.roleId === 2) {
             const fetchUsers = async () => {
                 try {
-                    console.log('usliii')
                     const response = await fetch(`${API_URL}/users`);
                     const data = await response.json();
-                    console.log(data)
 
                     if (data.success !== false) {
                         setUsersList(data);
@@ -141,9 +138,33 @@ const Profile: React.FC = () => {
         }
     }, [user.roleId]);
 
+
+    const handleToggleActiveStatus = async (userId: number, isActive: number) => {
+
+        console.log(isActive)
+        try {
+            const response = await activeProfile({ userId, isActive })
+
+            if (response) {
+                // Update users list to reflect the new status
+                setUsersList((prevUsers) =>
+                    prevUsers.map((user) =>
+                        user.id === userId ? { ...user, isActive: isActive ? 0 : 1 } : user
+                    )
+                );
+                alert(`User has been ${isActive ? "deactivated" : "activated"}.`);
+            } else {
+                alert("Failed to update user status.");
+            }
+        } catch (error) {
+            console.error("Error updating user status:", error);
+            alert("An error occurred.");
+        }
+    };
+
     return (
-        <div>
-            {user.roleId === "1" ? (
+        <>
+            {user.roleId === 1 ? (
                 <div className="max-w-2xl w-1/2 mx-auto mt-10 p-5 border rounded bg-white shadow-lg">
                     <div className="flex flex-col items-start p-5">
                         {/* Profile pic */}
@@ -281,24 +302,35 @@ const Profile: React.FC = () => {
                     </div>
                 </div>
             ) : user.roleId === 2 ? (
-                <div>
-                    <h2>Admine dobrodošli!</h2>
-                    <h3>Korisnici:</h3>
-                    <ul>
-                        {usersList.length > 0 ? (
-                            usersList.map((user) => (
-                                <li key={user.id}>
-                                    {user.ime} {user.prezime} - {user.email}
-                                </li>
-                            ))
-                        ) : (
-                            <p>Trenutno nema korisnika.</p>
-                        )}
-                    </ul>
+                <div className="mx-auto mt-10 p-5 border rounded bg-white shadow-lg inline-block">
+                    <div className="flex flex-col items-start p-5">
+                        <h1 className="text-2xl">Admine dobrodošli!</h1>
+                        <h3 className="text-xl mt-6 ">Korisnici:</h3>
+                        <ul>
+                            {usersList.length > 0 ? (
+                                usersList.map((user) => (
+                                    <li key={user.id} className="py-2 flex items-center justify-between">
+                                        <span>
+                                            {user.ime} {user.prezime} - {user.email} - {user.datum_rodjenja}
+                                        </span>
+                                        <button
+                                            onClick={() => handleToggleActiveStatus(user.id, user.isActive)}
+                                            className={`ml-4 px-3 py-1 rounded ${user.isActive ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                                                }`}
+                                        >
+                                            {user.isActive ? 'Deactivate' : 'Activate'}
+                                        </button>
+                                    </li>
+                                ))
+                            ) : (
+                                <p>Trenutno nema korisnika.</p>
+                            )}
+                        </ul>
+                    </div>
                 </div>
 
             ) : null}
-        </div>
+        </>
     );
 };
 

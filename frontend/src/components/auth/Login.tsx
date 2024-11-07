@@ -18,8 +18,6 @@ const Login: React.FC = () => {
 
     const notVerified = location.state?.notVerified || false;
 
-    console.log(notVerified)
-
     useEffect(() => {
         if (email && notVerified) {
             console.log('usli ovde ')
@@ -43,16 +41,21 @@ const Login: React.FC = () => {
         try {
             const responseData = await loginUser({ email, password, verificationCode });
             // localStorage.setItem('token', responseData.token);
-            sessionStorage.setItem("token", responseData.token)
-            localStorage.setItem('user', JSON.stringify({
-                id: responseData.user.id,
-                ime: responseData.user.ime,
-                prezime: responseData.user.prezime,
-                email: responseData.user.email,
-                dateBirth: new Date(responseData.user.dateBirth).toISOString().slice(0, 10),
-                urlSlike: API_URL + responseData.user.urlSlike,
-                roleId: responseData.user.role_id
-            }));
+            console.log(responseData.success)
+            if (responseData.success) {
+                sessionStorage.setItem("token", responseData.token)
+                localStorage.setItem('user', JSON.stringify({
+                    id: responseData.user.id,
+                    ime: responseData.user.ime,
+                    prezime: responseData.user.prezime,
+                    email: responseData.user.email,
+                    dateBirth: new Date(responseData.user.dateBirth).toISOString().slice(0, 10),
+                    urlSlike: API_URL + responseData.user.urlSlike,
+                    roleId: responseData.user.role_id,
+                    isActive: responseData.user.isActive
+                }));
+            }
+            alert(responseData.message)
             navigate('/')
 
         } catch (err: any) {

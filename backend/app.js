@@ -102,13 +102,13 @@ app.post('/login', async(req, res) => {
         const [results] = await db.query('SELECT * FROM User WHERE email = ?', [email]);
 
         if (results.length === 0) {
-            return res.status(400).json({ error: 'Invalid email or password' });
+            return res.status(400).json({ message: 'Invalid email or password' });
         }
         const user = results[0];
         // Provera lozinke
         const isPasswordMatch = await bcrypt.compare(password, user.password);
         if (!isPasswordMatch) {
-            return res.status(400).json({ error: 'Invalid email or password' });
+            return res.status(400).json({ message: 'Invalid email or password' });
         }
 
 
@@ -118,13 +118,13 @@ app.post('/login', async(req, res) => {
         // Ako korisnik nije verifikovan
         if (verificationResults.length === 0) {
             if (!verificationCode) {
-                return res.status(403).json({ error: 'Account not verified. Please enter your verification code.' });
+                return res.status(403).json({ success: false, message: 'Account not verified. Please enter your verification code.' });
             }
 
             // Ako je unet verifikacioni kod, proverimo ga
             const [codeResults] = await db.query('SELECT * FROM Verified WHERE user_id = ? AND verificationCode = ?', [user.id, verificationCode]);
             if (codeResults.length === 0) {
-                return res.status(400).json({ error: 'Invalid verification code' });
+                return res.status(400).json({ success: false, message: 'Invalid verification code' });
             }
 
             // Ažuriranje isVerificated u tabeli Verified i isActive u tabeli User
@@ -132,6 +132,7 @@ app.post('/login', async(req, res) => {
             await db.query('UPDATE User SET isActive = true WHERE id = ?', [user.id]);
             // Login uspešan nakon verifikacije
             return res.status(200).json({
+                success: true,
                 message: 'Login successful and account verified',
                 token: token,
                 user: {
@@ -143,8 +144,14 @@ app.post('/login', async(req, res) => {
                 }
             });
         } else {
+            //ako nije aktivan ( znaci da je deaktiviran)
+            if (user.isActive === 0) {
+                console.log("NIJE AKTIVAN")
+                return res.status(400).json({ success: false, message: 'Your profile is deactivated' });
+            }
             // Ako je korisnik već verifikovan, dozvoli login
             return res.status(200).json({
+                success: true,
                 message: 'Login successful',
                 token: token,
                 user: {
@@ -160,7 +167,7 @@ app.post('/login', async(req, res) => {
         }
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: 'Error during login process' });
+        return res.status(500).json({ success: false, message: 'Error during login process' });
     }
 });
 
@@ -307,13 +314,29 @@ app.post("/update-user-info", async(req, res) => {
 app.get('/users', async(req, res) => {
     try {
         const [users] = await db.query('SELECT * FROM user WHERE role_id = 1');
-        console.log(users)
         res.json(users);
 
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error fetching users' });
     }
 });
+
+
+app.post("/updateIsActive", async(req, res) => {
+    const { userId, isActive } = req.body;
+
+    console.log("active", isActive)
+    try {
+        const sql = "UPDATE user SET isActive = ? WHERE id = ?";
+        await db.query(sql, [isActive, userId]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Error updating user status:", error);
+        res.status(500).json({ success: false, message: "Database update failed" });
+    }
+});
+
 
 
 // Pokretanje servera

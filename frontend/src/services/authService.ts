@@ -75,15 +75,8 @@ export const loginUser = async ({
       },
       body: JSON.stringify({ email, password, verificationCode }),
     });
-
-    const responseData = await response.json();
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Neuspešna prijava.");
-    }
-
-    return responseData;
+    const data = await response.json();
+    return data;
   } catch (error) {
     throw new Error(
       error instanceof Error ? error.message : "Greška prilikom prijave."
@@ -205,5 +198,24 @@ export const uploadProfileImage = async ({ email, profileImage }: any) => {
   } catch (error) {
     console.error("Error uploading profile image:", error);
     return null;
+  }
+};
+
+export const activeProfile = async ({ userId, isActive }: any) => {
+  try {
+    console.log("active", isActive);
+    const response = await fetch(`${API_URL}/updateIsActive`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId, isActive: isActive ? 0 : 1 }),
+    });
+
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error("Login error:", error);
+    return false;
   }
 };
