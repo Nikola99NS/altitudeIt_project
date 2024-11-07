@@ -126,6 +126,10 @@ const Login: React.FC = () => {
             <p className="mt-4 text-center text-sm text-gray-600">
                 Nemate nalog? <a href="/register" className="text-blue-500">Registrujte se ovde</a>
             </p>
+
+            <button className="google-login-button">
+                Prijavi se preko Google naloga
+            </button>
         </div>
     );
 };

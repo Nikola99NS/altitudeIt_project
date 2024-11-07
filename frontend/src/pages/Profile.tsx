@@ -19,6 +19,18 @@ const Profile: React.FC = () => {
     const [isChangingPassword, setIsChangingPassword] = useState(false);
 
 
+    const [emailFilter, setEmailFilter] = useState('');
+    const [birthDateFilter, setBirthDateFilter] = useState('');
+
+    // Funkcija za filtriranje korisnika po emailu i datumu rođenja
+    const filteredUsers = usersList.filter((user) => {
+        const matchesEmail = emailFilter ? user.email.includes(emailFilter) : true;
+        const matchesBirthDate = birthDateFilter ? user.dateBirth === birthDateFilter : true;
+        return matchesEmail && matchesBirthDate;
+    });
+
+
+
     const [isEditing, setIsEditing] = useState<{ [key: string]: boolean }>({
         name: false,
         surname: false,
@@ -140,8 +152,6 @@ const Profile: React.FC = () => {
 
 
     const handleToggleActiveStatus = async (userId: number, isActive: number) => {
-
-        console.log(isActive)
         try {
             const response = await activeProfile({ userId, isActive })
 
@@ -305,11 +315,29 @@ const Profile: React.FC = () => {
                 <div className="mx-auto mt-10 p-5 border rounded bg-white shadow-lg inline-block">
                     <div className="flex flex-col items-start p-5">
                         <h1 className="text-2xl">Admine dobrodošli!</h1>
-                        <h3 className="text-xl mt-6 ">Korisnici:</h3>
-                        <ul>
-                            {usersList.length > 0 ? (
-                                usersList.map((user) => (
-                                    <li key={user.id} className="py-2 flex items-center justify-between">
+                        <h3>Filtriraj korisnike:</h3>
+
+                        {/* Polja za unos filtera */}
+                        <input
+                            type="text"
+                            placeholder="Filtriraj po emailu"
+                            value={emailFilter}
+                            onChange={(e) => setEmailFilter(e.target.value)}
+                            className="p-2 mt-2 mb-4 border rounded w-full"
+                        />
+                        <input
+                            type="date"
+                            placeholder="Filtriraj po datumu rođenja"
+                            value={birthDateFilter}
+                            onChange={(e) => setBirthDateFilter(e.target.value)}
+                            className="p-2 mb-4 border rounded w-full"
+                        />
+
+                        <h3>Korisnici:</h3>
+                        <ul >
+                            {filteredUsers.length > 0 ? (
+                                filteredUsers.map((user) => (
+                                    <li className="p-2" key={user.id}>
                                         <span>
                                             {user.ime} {user.prezime} - {user.email} - {user.datum_rodjenja}
                                         </span>
@@ -323,7 +351,7 @@ const Profile: React.FC = () => {
                                     </li>
                                 ))
                             ) : (
-                                <p>Trenutno nema korisnika.</p>
+                                <p>Trenutno nema korisnika koji odgovaraju filterima.</p>
                             )}
                         </ul>
                     </div>
