@@ -122,7 +122,7 @@ const Profile: React.FC = () => {
         if (newProfileImageUrl) {
             setUserInfo((prev) => ({
                 ...prev,
-                profileImage: `${API_URL}${newProfileImageUrl}`, // ažurira URL profilne slike
+                profileImage: `${API_URL}/user/${newProfileImageUrl}`, // ažurira URL profilne slike
             }));
             alert("Profile image updated successfully!");
         } else {
@@ -134,11 +134,16 @@ const Profile: React.FC = () => {
         if (user.roleId === 2) {
             const fetchUsers = async () => {
                 try {
-                    const response = await fetch(`${API_URL}/users`);
+                    const response = await fetch(`${API_URL}/user/users`);
                     const data = await response.json();
-
                     if (data.success !== false) {
-                        setUsersList(data);
+                        // Formatiranje `datum_rodjenja` u svakom objektu
+                        const formattedData = data.map((user: { datum_rodjenja: string | number | Date; }) => ({
+                            ...user,
+                            datum_rodjenja: new Date(user.datum_rodjenja).toISOString().slice(0, 10)
+                        }));
+                        setUsersList(formattedData);
+
                     } else {
                         console.error('Failed to fetch users');
                     }
@@ -315,7 +320,7 @@ const Profile: React.FC = () => {
                 <div className="mx-auto mt-10 p-5 border rounded bg-white shadow-lg inline-block">
                     <div className="flex flex-col items-start p-5">
                         <h1 className="text-2xl">Admine dobrodošli!</h1>
-                        <h3>Filtriraj korisnike:</h3>
+                        <h3 className="mt-4 mb-2">Filtriraj korisnike:</h3>
 
                         {/* Polja za unos filtera */}
                         <input
@@ -333,7 +338,7 @@ const Profile: React.FC = () => {
                             className="p-2 mb-4 border rounded w-full"
                         />
 
-                        <h3>Korisnici:</h3>
+                        <h3 className="text-xl mt-4">Korisnici:</h3>
                         <ul >
                             {filteredUsers.length > 0 ? (
                                 filteredUsers.map((user) => (

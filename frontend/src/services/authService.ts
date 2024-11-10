@@ -8,7 +8,7 @@ export const registerUser = async (userData: {
   birthDate: string;
 }) => {
   try {
-    const response = await fetch(`${API_URL}/register`, {
+    const response = await fetch(`${API_URL}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -36,7 +36,7 @@ export const checkEmailVerification = async (
   email: string
 ): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_URL}/check-verification`, {
+    const response = await fetch(`${API_URL}/auth/check-verification`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -68,7 +68,7 @@ export const loginUser = async ({
   verificationCode?: string;
 }): Promise<any> => {
   try {
-    const response = await fetch(`${API_URL}/login`, {
+    const response = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -91,7 +91,7 @@ interface LoginCredentials {
 
 export const checkPassword = async ({ email, password }: LoginCredentials) => {
   try {
-    const response = await fetch(`${API_URL}/check-password`, {
+    const response = await fetch(`${API_URL}/auth/check-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -112,7 +112,7 @@ export const checkPassword = async ({ email, password }: LoginCredentials) => {
 
 export const updatePassword = async ({ email, newPassword }: any) => {
   try {
-    const response = await fetch("http://localhost:5000/update-password", {
+    const response = await fetch("http://localhost:5000/auth/update-password", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -136,13 +136,16 @@ export const saveUserInfo = async ({
   birthdate,
 }: any) => {
   try {
-    const response = await fetch("http://localhost:5000/update-user-info", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, name, surname, birthdate }),
-    });
+    const response = await fetch(
+      "http://localhost:5000/user/update-user-info",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, name, surname, birthdate }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error("Failed to update user info");
@@ -178,10 +181,13 @@ export const uploadProfileImage = async ({ email, profileImage }: any) => {
   formData.append("email", email);
 
   try {
-    const response = await fetch("http://localhost:5000/upload-profile-image", {
-      method: "POST",
-      body: formData,
-    });
+    const response = await fetch(
+      "http://localhost:5000/user/upload-profile-image",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
     const data = await response.json();
 
@@ -204,7 +210,7 @@ export const uploadProfileImage = async ({ email, profileImage }: any) => {
 export const activeProfile = async ({ userId, isActive }: any) => {
   try {
     console.log("active", isActive);
-    const response = await fetch(`${API_URL}/updateIsActive`, {
+    const response = await fetch(`${API_URL}/user/updateIsActive`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
