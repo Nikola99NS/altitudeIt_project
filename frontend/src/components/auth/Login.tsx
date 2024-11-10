@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { checkEmailVerification, loginUser } from '../../services/authService';
+import VerificationCodeInput from './VerificationCodeInput';
 
-const API_URL = "http://localhost:5000";
+const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 
 
 const Login: React.FC = () => {
@@ -20,10 +21,10 @@ const Login: React.FC = () => {
 
     useEffect(() => {
         if (email && notVerified) {
-            console.log('usli ovde ')
             const checkVerificationStatus = async () => {
                 try {
                     const isVerified = await checkEmailVerification(email);
+                    console.log('is verified', isVerified)
                     if (!isVerified) {
                         setShowVerificationCode(true);
                         setError('Vaš nalog nije verifikovan. Unesite verifikacioni kod.');
@@ -40,8 +41,6 @@ const Login: React.FC = () => {
         e.preventDefault();
         try {
             const responseData = await loginUser({ email, password, verificationCode });
-            // localStorage.setItem('token', responseData.token);
-            console.log(responseData.success)
             if (responseData.success) {
                 sessionStorage.setItem("token", responseData.token)
                 localStorage.setItem('user', JSON.stringify({
@@ -90,31 +89,10 @@ const Login: React.FC = () => {
                     />
                 </div>
                 {showVerificationCode && (
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700">Verifikacioni kod</label>
-                        <div className="flex justify-between mt-1">
-                            {[...Array(6)].map((_, index) => (
-                                <input
-                                    key={index}
-                                    type="text"
-                                    maxLength={1}
-                                    className="flex-1 w-1/6 h-12 mx-1 text-center border border-gray-300 rounded-md focus:ring focus:ring-blue-300"
-                                    onChange={(e) => {
-                                        setVerificationCode((prev) => {
-                                            const newCode = prev.split('');
-                                            newCode[index] = e.target.value;
-                                            return newCode.join('');
-                                        });
-                                        if (e.target.value) {
-                                            const nextInput = e.target.nextElementSibling as HTMLInputElement;
-                                            if (nextInput) nextInput.focus();
-                                        }
-                                    }}
-                                    onFocus={(e) => e.target.select()}
-                                />
-                            ))}
-                        </div>
-                    </div>
+                    <VerificationCodeInput
+                        verificationCode={verificationCode}
+                        setVerificationCode={setVerificationCode}
+                    />
                 )}
                 <button
                     type="submit"

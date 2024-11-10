@@ -71,7 +71,9 @@ const login = async(req, res) => {
                     ime: user.ime,
                     prezime: user.prezime,
                     email: user.email,
-                    dateBirth: user.datum_rodjenja
+                    dateBirth: user.datum_rodjenja,
+                    urlSlike: user.urlSlike,
+                    role_id: user.role_id
                 }
             });
         } else {
@@ -114,7 +116,7 @@ const checkVerification = async(req, res) => {
             return res.status(404).json({ message: 'Korisnik nije pronađen.' });
         }
 
-        const [verificationResults] = await verifiedModel.checkIsVerified(user.id);
+        const verificationResults = await verifiedModel.checkIsVerified(user.id);
         if (verificationResults === null) {
             return res.status(404).json({ message: 'Verifikacija nije pronađena.' });
         }

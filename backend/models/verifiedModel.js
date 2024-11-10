@@ -6,7 +6,7 @@ const insertVerification = async(userId, verificationCode) => {
 };
 
 const checkIsVerified = async(userId) => {
-    const [response] = await db.query('SELECT * FROM Verified WHERE user_id = ? AND isVerificated = true', [userId])
+    const [response] = await db.query('SELECT * FROM Verified WHERE user_id = ? AND isVerificated = 1', [userId]);
     return response;
 }
 
@@ -16,7 +16,7 @@ const checkVerificationCode = async(userId, verificationCode) => {
 }
 
 const updateVerified = async(userId) => {
-    await db.query('UPDATE Verified SET isVerificated = true WHERE user_id = ?', [userId]);
+    await db.query('UPDATE Verified SET isVerificated = 1 WHERE user_id = ?', [userId]);
 }
 
 

@@ -12,10 +12,10 @@ const getUsers = async(req, res) => {
 }
 
 const updateUserInfo = async(req, res) => {
-    const { email, name, surname, birthdate } = req.body;
+    const { email, ime, prezime, dateBirth } = req.body;
 
     try {
-        const response = await userModel.valuesForUpdate(email, name, surname, birthdate);
+        const response = await userModel.valuesForUpdate(email, ime, prezime, dateBirth);
 
         // Ako nema polja za ažuriranje, vraćamo poruku
         if (response.values.length === 1) {

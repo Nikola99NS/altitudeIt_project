@@ -1,11 +1,7 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import Header from './components/layout/Header';
-import Login from './components/auth/Login';
-import Register from './components/auth/Register';
 import Footer from './components/layout/Footer';
-import Profile from './pages/Profile';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import AppRoutes from './pages/routes/AppRoutes';
 
 function App() {
   return (
@@ -13,19 +9,7 @@ function App() {
       <div className="flex flex-col min-h-screen bg-gray-100">
         <Header />
         <main className="flex-grow flex  items-center justify-center">
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="*" element={<div>404 - Stranica nije pronađena</div>} />
-          </Routes>
+          <AppRoutes />
         </main>
         <Footer />
       </div>

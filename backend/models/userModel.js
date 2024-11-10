@@ -13,8 +13,9 @@ const insertUser = async(firstName, lastName, email, hashedPassword, birthDate) 
     return results.insertId;
 };
 
-const setIsActive = async(userId, isActive) => {
-    await db.query('UPDATE User SET isActive = true WHERE id = ?', [userId, isActive]);
+const setIsActive = async(userId) => {
+    const response = await db.query('UPDATE User SET isActive = true WHERE id = ?', [userId]);
+    console.log('sta je ovo', response)
 }
 
 const updatePassword = async(hashedPassword, email) => {
