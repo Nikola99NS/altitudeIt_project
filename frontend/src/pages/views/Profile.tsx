@@ -121,9 +121,7 @@ const Profile: React.FC = () => {
     };
 
     const toggleTwoFactor = async () => {
-        console.log(isTwoFactorEnabled)
         const newStatus = isTwoFactorEnabled ? 0 : 1;
-        console.log(newStatus)
         const success = await change2FAStatus({ email, newStatus });
 
         if (success) {

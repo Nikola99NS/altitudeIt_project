@@ -17,7 +17,6 @@ const updateUserInfo = async(req, res) => {
     try {
         const response = await userModel.valuesForUpdate(email, ime, prezime, dateBirth);
 
-        // Ako nema polja za ažuriranje, vraćamo poruku
         if (response.values.length === 1) {
             return res.status(400).json({ success: false, message: "No fields to update" });
         }
@@ -29,23 +28,21 @@ const updateUserInfo = async(req, res) => {
             res.json({ success: false });
         }
     } catch (error) {
-        // Hvatanje bilo kakve greške tokom obrade
         console.error("Error in update-user-info route:", error);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 }
 
-// Konfiguracija za čuvanje slika
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/images'); // direktorijum gde će se čuvati slike
+        cb(null, 'uploads/images');
     },
     filename: (req, file, cb) => {
         cb(null, `${Date.now()}-${file.originalname}`);
     },
 });
 
-const uploadMiddleware = multer({ storage }).single('profileImage'); // Middleware za upload fajla
+const uploadMiddleware = multer({ storage }).single('profileImage');
 
 const uploadProfileImage = async(req, res) => {
     const { email } = req.body;
@@ -83,7 +80,6 @@ const updateIsActive = async(req, res) => {
         }
 
     } catch (error) {
-        //     console.error("Error updating user status:", error);
         res.status(500).json({ success: false, message: "Database update failed" });
     }
 }
