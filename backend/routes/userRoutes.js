@@ -1,5 +1,5 @@
 const express = require('express');
-const { getUsers, updateUserInfo, uploadMiddleware, uploadProfileImage, updateIsActive } = require('../controllers/userController');
+const { getUsers, updateUserInfo, uploadMiddleware, uploadProfileImage, updateIsActive, get2FAStatus } = require('../controllers/userController');
 const router = express.Router();
 
 router.get('/users', getUsers);

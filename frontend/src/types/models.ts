@@ -6,6 +6,7 @@ export interface User {
   dateBirth: string;
   urlSlike: string;
   roleId: number;
+  twoFA: number;
 }
 
 // Model for profile image

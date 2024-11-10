@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { checkEmailVerification, loginUser } from '../../services/authService';
+import { checkEmailVerification, checkTwoFACode, loginUser } from '../../services/authService';
 import VerificationCodeInput from './VerificationCodeInput';
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
@@ -12,6 +12,8 @@ const Login: React.FC = () => {
     const [password, setPassword] = useState<string>('');
     const [verificationCode, setVerificationCode] = useState<string>('');
     const [showVerificationCode, setShowVerificationCode] = useState<boolean>(false);
+    const [twoFACode, setTwoFACode] = useState<string>('');
+    const [showTwoFACode, setShowTwoFACode] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const navigate = useNavigate();
 
@@ -40,8 +42,32 @@ const Login: React.FC = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            if (twoFACode !== '') {
+                const user = await checkTwoFACode({ email, password, twoFACode })
+                console.log('ovo je user', user)
+                if (user.success) {
+                    sessionStorage.setItem("token", user.token)
+                    localStorage.setItem('user', JSON.stringify({
+                        id: user.user.id,
+                        ime: user.user.ime,
+                        prezime: user.user.prezime,
+                        email: user.user.email,
+                        dateBirth: new Date(user.user.datum_rodjenja).toISOString().slice(0, 10),
+                        urlSlike: API_URL + user.user.urlSlike,
+                        roleId: user.user.role_id,
+                        isActive: user.user.isActive,
+                        twoFA: user.user.twoFA
+                    }));
+                    navigate('/')
+                    return;
+                } else {
+                    alert(user.message)
+                }
+            }
+
             const responseData = await loginUser({ email, password, verificationCode });
             if (responseData.success) {
+                console.log('usli smo negde')
                 sessionStorage.setItem("token", responseData.token)
                 localStorage.setItem('user', JSON.stringify({
                     id: responseData.user.id,
@@ -51,11 +77,16 @@ const Login: React.FC = () => {
                     dateBirth: new Date(responseData.user.dateBirth).toISOString().slice(0, 10),
                     urlSlike: API_URL + responseData.user.urlSlike,
                     roleId: responseData.user.role_id,
-                    isActive: responseData.user.isActive
+                    isActive: responseData.user.isActive,
+                    twoFA: 0
                 }));
+                navigate('/')
+            } else if (responseData.twoFACode > 0) {
+                // localStorage.setItem("trenutni2FACode", responseData.twoFACode)
+                setShowTwoFACode(true);
             }
             alert(responseData.message)
-            navigate('/')
+            // navigate('/')
 
         } catch (err: any) {
             setError(err.message);
@@ -92,6 +123,12 @@ const Login: React.FC = () => {
                     <VerificationCodeInput
                         verificationCode={verificationCode}
                         setVerificationCode={setVerificationCode}
+                    />
+                )}
+                {showTwoFACode && (
+                    <VerificationCodeInput
+                        verificationCode={twoFACode}
+                        setVerificationCode={setTwoFACode}
                     />
                 )}
                 <button

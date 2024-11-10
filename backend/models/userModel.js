@@ -1,4 +1,5 @@
 const db = require('../db');
+const bcrypt = require('bcryptjs');
 
 
 const getUserByEmail = async(email) => {
@@ -66,12 +67,29 @@ const uploadProfileImage = async(email, profileImageUrl) => {
 }
 
 const updateIsActive = async(userId, isActive) => {
-    console.log(userId)
-    console.log(isActive)
     const response = await db.query("UPDATE user SET isActive = ? WHERE id = ?", [isActive, userId]);
     return response;
 }
 
+const get2FaStatus = async(userId) => {
+    const [response] = await db.query('SELECT twoFA FROM User WHERE id = ?', [userId]);
+    return response;
+}
+
+const insertTwoFACode = async(userId, twoFACode) => {
+    return await db.query('update user set twoFACode = ? where id = ?', [twoFACode, userId])
+}
+
+const checkTwoFACode = async(email, password, twoFACode) => {
+    const [response] = await db.query('SELECT * FROM user WHERE email = ? AND twoFACode = ?', [email, twoFACode]);
+    return response;
+}
+
+const change2FAStatus = async(email, status) => {
+    console.log(email, status)
+    return await db.query("update user set twoFA = ? where email = ?", [status, email]);
+
+}
 
 module.exports = {
     getUserByEmail,
@@ -81,7 +99,11 @@ module.exports = {
     getUsers,
     valuesForUpdate,
     uploadProfileImage,
-    updateIsActive
+    updateIsActive,
+    get2FaStatus,
+    insertTwoFACode,
+    checkTwoFACode,
+    change2FAStatus
     // getVerificationStatus
     // updateUserVerification
 };

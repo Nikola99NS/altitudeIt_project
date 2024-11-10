@@ -88,4 +88,5 @@ const updateIsActive = async(req, res) => {
     }
 }
 
+
 module.exports = { getUsers, updateUserInfo, uploadMiddleware, uploadProfileImage, updateIsActive };

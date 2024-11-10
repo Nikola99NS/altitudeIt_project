@@ -28,6 +28,7 @@ const Admin: React.FC = () => {
         return matchesEmail && matchesBirthDate;
     });
 
+
     const handleToggleActiveStatus = async (userId: number, isActive: number) => {
         try {
             const response = await activeProfile({ userId, isActive });

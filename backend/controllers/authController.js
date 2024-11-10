@@ -82,7 +82,15 @@ const login = async(req, res) => {
                 console.log("NIJE AKTIVAN")
                 return res.status(400).json({ success: false, message: 'Your profile is deactivated' });
             }
-            // Ako je korisnik vec verifikovan, dozvoli login
+            // Ako je korisnik vec verifikovan,  proveri da li je potrebna 2FA
+            const [getTwoFAStatus] = await userModel.get2FaStatus(user.id);
+            console.log('ovo je status', getTwoFAStatus)
+            if (getTwoFAStatus.twoFA) {
+                const twoFACode = Math.floor(100000 + Math.random() * 900000);
+                await userModel.insertTwoFACode(user.id, twoFACode);
+                await sendOrderConfirmationEmail(email, twoFACode);
+                return res.json({ success: false, message: "Potrebno je da unesete kod koji smo vam poslali na mejl", twoFACode: twoFACode })
+            }
             return res.status(200).json({
                 success: true,
                 message: 'Login successful',
@@ -103,6 +111,43 @@ const login = async(req, res) => {
         return res.status(500).json({ message: 'Error during login process' });
     }
 };
+
+const checkTwoFACode = async(req, res) => {
+    const { email, password, twoFACode } = req.body;
+    try {
+        const response = await userModel.checkTwoFACode(email, password, twoFACode);
+        if (response.length === 0) {
+            return res.json({ success: false, message: "Neispravan mejl ili kod" });
+        }
+
+        const match = await bcrypt.compare(password, response[0].password);
+        if (!match) {
+            return res.json({ success: false, message: "Neispravan password" });
+        }
+        const token = generateToken(response[0]);
+
+        return res.json({ user: response[0], success: true, token: token })
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Error during checking process' });
+    }
+}
+
+const change2FAStatus = async(req, res) => {
+    const { email, newStatus } = req.body;
+
+    try {
+        const [response] = await userModel.change2FAStatus(email, newStatus);
+        if (response.affectedRows > 0) {
+            res.json({ success: true })
+        } else {
+            res.json({ success: false })
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Došlo je do greške prilikom promene 2FA stanja .' });
+    }
+}
 
 const checkVerification = async(req, res) => {
     const { email } = req.body;
@@ -170,4 +215,4 @@ const updatePassword = async(req, res) => {
 }
 
 
-module.exports = { register, login, checkVerification, checkPassword, updatePassword };
+module.exports = { register, login, checkVerification, checkPassword, updatePassword, checkTwoFACode, change2FAStatus };

@@ -62,10 +62,12 @@ export const loginUser = async ({
   email,
   password,
   verificationCode,
-}: {
+}: // twoFACode,
+{
   email: string;
   password: string;
   verificationCode?: string;
+  // twoFACode?: string;
 }): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/auth/login`, {
@@ -76,7 +78,6 @@ export const loginUser = async ({
       body: JSON.stringify({ email, password, verificationCode }),
     });
     const data = await response.json();
-    console.log("ovo je data", data);
     return data;
   } catch (error) {
     throw new Error(
@@ -126,6 +127,40 @@ export const updatePassword = async ({ email, newPassword }: any) => {
     const data = await response.json();
     return data.success;
   } catch (error) {
+    return false;
+  }
+};
+
+export const checkTwoFACode = async ({ email, password, twoFACode }: any) => {
+  try {
+    const response = await fetch(`${API_URL}/auth/check-twoFA-code`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password, twoFACode }),
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error", error);
+    return false;
+  }
+};
+
+export const change2FAStatus = async ({ email, newStatus }: any) => {
+  try {
+    console.log(email, newStatus);
+    const response = await fetch(`${API_URL}/auth/change-2fa-status`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, newStatus }),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Error changing 2FA status:", error);
     return false;
   }
 };

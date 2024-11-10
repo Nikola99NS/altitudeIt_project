@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { checkPassword, updatePassword } from '../../services/authService';
+import { change2FAStatus, checkPassword, updatePassword } from '../../services/authService';
 import { saveUserInfo, uploadProfileImage } from '../../services/userService';
 import { User, EditState, PasswordChange } from '../../types/models';
 
@@ -8,6 +8,7 @@ const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 const Profile: React.FC = () => {
     const user: User = JSON.parse(localStorage.getItem('user') || '{}');
     const email = user.email;
+
 
     const [profileImage, setProfileImage] = useState<File | null>(null);
     const [isEditingPassword, setIsEditingPassword] = useState<boolean>(false);
@@ -26,12 +27,16 @@ const Profile: React.FC = () => {
 
     const [userInfo, setUserInfo] = useState<User>({
         email,
+        twoFA: user.twoFA,
         ime: user.ime,
         prezime: user.prezime,
         dateBirth: user.dateBirth,
         urlSlike: user.urlSlike,
         roleId: user.roleId,
     });
+
+    const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState<number>(user.twoFA);
+
 
     const handleVerifyPassword = async () => {
         const valid = await checkPassword({ email, password: passwordChange.currentPassword });
@@ -115,6 +120,21 @@ const Profile: React.FC = () => {
         }
     };
 
+    const toggleTwoFactor = async () => {
+        console.log(isTwoFactorEnabled)
+        const newStatus = isTwoFactorEnabled ? 0 : 1;
+        console.log(newStatus)
+        const success = await change2FAStatus({ email, newStatus });
+
+        if (success) {
+            setIsTwoFactorEnabled(newStatus);
+            alert(`Two-Factor Authentication ${newStatus ? 'activated' : 'deactivated'}!`);
+        } else {
+            alert(`Failed to ${newStatus ? 'activate' : 'deactivate'} Two-Factor Authentication.`);
+        }
+    };
+
+
     return (
         <div className="max-w-2xl w-1/2 mx-auto mt-10 p-5 border rounded bg-white shadow-lg">
             <div className="flex flex-col items-start p-5">
@@ -140,6 +160,13 @@ const Profile: React.FC = () => {
                         />
                         <button onClick={handleUploadImage} className="border-2 p-1 bg-green-200 text-green-800 hover:bg-green-300">
                             Upload Profile Image
+                        </button>
+                        <button
+                            onClick={toggleTwoFactor}
+                            className={`px-4 py-2 rounded text-white font-semibold transition duration-200 
+                        ${isTwoFactorEnabled ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                        >
+                            {isTwoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA'}
                         </button>
                     </div>
                 </div>
