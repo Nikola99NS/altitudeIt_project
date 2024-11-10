@@ -28,8 +28,8 @@ const updatePassword = async(hashedPassword, email) => {
 const getUsers = async() => {
     const [users] = await db.query(`
     SELECT u.*, v.isVerificated 
-    FROM user AS u
-    LEFT JOIN verified AS v ON u.id = v.user_id
+    FROM User AS u
+    LEFT JOIN Verified AS v ON u.id = v.user_id
     WHERE u.role_id = 1
 `);
     return users;
@@ -37,7 +37,7 @@ const getUsers = async() => {
 
 const valuesForUpdate = async(email, name, surname, birthdate) => {
     // Priprema promenljivih za SQL upit
-    let sql = "UPDATE user SET ";
+    let sql = "UPDATE User SET ";
     const values = [];
 
     // Dinamički dodajemo polja koja treba ažurirati
@@ -53,11 +53,6 @@ const valuesForUpdate = async(email, name, surname, birthdate) => {
         sql += "datum_rodjenja = ?, ";
         values.push(birthdate);
     }
-    // if (imageUrl) {
-    //     sql += "urlSlike = ?, ";
-    //     values.push();
-    // }
-
     // Uklanjamo višak zarez sa kraja i dodajemo WHERE uslov
     sql = sql.slice(0, -2); // Skida poslednji zarez
     sql += " WHERE email = ?";
@@ -67,12 +62,12 @@ const valuesForUpdate = async(email, name, surname, birthdate) => {
 }
 
 const uploadProfileImage = async(email, profileImageUrl) => {
-    const [results] = await db.query('UPDATE user SET urlSlike = ? WHERE email = ?', [profileImageUrl, email]);
+    const [results] = await db.query('UPDATE User SET urlSlike = ? WHERE email = ?', [profileImageUrl, email]);
     return results;
 }
 
 const updateIsActive = async(userId, isActive) => {
-    const response = await db.query("UPDATE user SET isActive = ? WHERE id = ?", [isActive, userId]);
+    const response = await db.query("UPDATE User SET isActive = ? WHERE id = ?", [isActive, userId]);
     return response;
 }
 
@@ -82,17 +77,17 @@ const get2FaStatus = async(userId) => {
 }
 
 const insertTwoFACode = async(userId, twoFACode) => {
-    return await db.query('update user set twoFACode = ? where id = ?', [twoFACode, userId])
+    return await db.query('update User set twoFACode = ? where id = ?', [twoFACode, userId])
 }
 
 const checkTwoFACode = async(email, password, twoFACode) => {
-    const [response] = await db.query('SELECT * FROM user WHERE email = ? AND twoFACode = ?', [email, twoFACode]);
+    const [response] = await db.query('SELECT * FROM User WHERE email = ? AND twoFACode = ?', [email, twoFACode]);
     return response;
 }
 
 const change2FAStatus = async(email, status) => {
     console.log(email, status)
-    return await db.query("update user set twoFA = ? where email = ?", [status, email]);
+    return await db.query("update User set twoFA = ? where email = ?", [status, email]);
 
 }
 

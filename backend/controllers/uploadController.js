@@ -22,7 +22,7 @@ const updateProfileImage = async(req, res) => {
         return res.status(400).json({ success: false, message: "No file uploaded" });
     }
     const profileImageUrl = `/uploads/images/${req.file.filename}`;
-    const sql = 'UPDATE user SET urlSlike = ? WHERE email = ?';
+    const sql = 'UPDATE User SET urlSlike = ? WHERE email = ?';
     const [results] = await db.query(sql, [profileImageUrl, email]);
     if (results.affectedRows > 0) {
         res.json({ success: true, profileImageUrl });
