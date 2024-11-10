@@ -26,7 +26,12 @@ const updatePassword = async(hashedPassword, email) => {
 }
 
 const getUsers = async() => {
-    const [users] = await db.query('SELECT * FROM user WHERE role_id = 1');
+    const [users] = await db.query(`
+    SELECT u.*, v.isVerificated 
+    FROM user AS u
+    LEFT JOIN verified AS v ON u.id = v.user_id
+    WHERE u.role_id = 1
+`);
     return users;
 }
 

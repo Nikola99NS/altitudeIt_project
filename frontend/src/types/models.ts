@@ -1,4 +1,3 @@
-// User model for storing user data
 export interface User {
   email: string;
   ime: string;
@@ -9,19 +8,16 @@ export interface User {
   twoFA: number;
 }
 
-// Model for profile image
 export interface ProfileImage {
   profileImage: string | null;
 }
 
-// Model for handling form state (like isEditing)
 export interface EditState {
   ime: boolean;
   prezime: boolean;
   dateBirth: boolean;
 }
 
-// Model for handling password change
 export interface PasswordChange {
   currentPassword: string;
   newPassword: string;

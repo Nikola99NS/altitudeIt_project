@@ -5,7 +5,6 @@ import { activeProfile } from "../../services/userService";
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 
-// Define types
 interface User {
     id: number;
     ime: string;
@@ -13,6 +12,7 @@ interface User {
     email: string;
     dateBirth: string;
     isActive: number;
+    isVerificated: number;
 }
 
 const Admin: React.FC = () => {
@@ -22,10 +22,14 @@ const Admin: React.FC = () => {
     const [birthDateFilter, setBirthDateFilter] = useState<string>("");
     const [usersList, setUsersList] = useState<User[]>([]);
 
+    const [isVerificatedFilter, setIsVerificatedFilter] = useState<number | null>(null); // use number for verification filter
+
+
     const filteredUsers = usersList.filter((user) => {
         const matchesEmail = emailFilter ? user.email.includes(emailFilter) : true;
         const matchesBirthDate = birthDateFilter ? user.dateBirth === birthDateFilter : true;
-        return matchesEmail && matchesBirthDate;
+        const matchesVerification = isVerificatedFilter !== null ? user.isVerificated === isVerificatedFilter : true;
+        return matchesEmail && matchesBirthDate && matchesVerification;
     });
 
 
@@ -72,12 +76,12 @@ const Admin: React.FC = () => {
         fetchUsers();
     }, [user.roleId]);
 
+
     return (
-        <div className="mx-auto mt-10 p-5 border rounded bg-white shadow-lg inline-block">
-            <div className="flex flex-col items-start p-5">
+        <div className="mx-auto  mt-10 p-5 border rounded bg-white shadow-lg inline-block">
+            <div className="flex flex-col items-start p-5 min-h-[400px] sm:min-w-[700px] min-w-[500px]">
                 <h1 className="text-2xl">Admine dobrodošli!</h1>
                 <h3 className="mt-4 mb-2">Filtriraj korisnike:</h3>
-
                 <input
                     type="text"
                     placeholder="Filtriraj po emailu"
@@ -92,7 +96,17 @@ const Admin: React.FC = () => {
                     onChange={(e) => setBirthDateFilter(e.target.value)}
                     className="p-2 mb-4 border rounded w-full"
                 />
-
+                <select
+                    value={isVerificatedFilter !== null ? isVerificatedFilter : ""}
+                    onChange={(e) =>
+                        setIsVerificatedFilter(e.target.value ? Number(e.target.value) : null)
+                    }
+                    className="p-2 mb-4 border rounded w-full"
+                >
+                    <option value="">Svi korisnici</option>
+                    <option value="1">Verifikovani</option>
+                    <option value="0">Nisu verifikovani</option>
+                </select>
                 <h3 className="text-xl my-4">Korisnici:</h3>
                 <ul>
                     {filteredUsers.length > 0 ? (

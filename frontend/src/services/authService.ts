@@ -62,12 +62,10 @@ export const loginUser = async ({
   email,
   password,
   verificationCode,
-}: // twoFACode,
-{
+}: {
   email: string;
   password: string;
   verificationCode?: string;
-  // twoFACode?: string;
 }): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/auth/login`, {

@@ -20,15 +20,12 @@ export const saveUserInfo = async ({ email, ime, prezime, dateBirth }: any) => {
     const data = await response.json();
 
     if (data.success) {
-      // Ažuriraj localStorage samo ako je ažuriranje bilo uspešno
       const userInfo = JSON.parse(localStorage.getItem("user") || "{}");
 
-      // Ažuriraj samo ona polja koja su prosleđena
       if (ime) userInfo.ime = ime;
       if (prezime) userInfo.prezime = prezime;
       if (dateBirth) userInfo.dateBirth = dateBirth;
 
-      // Snimi nazad u localStorage
       localStorage.setItem("user", JSON.stringify(userInfo));
 
       return data;
