@@ -2,16 +2,13 @@ const API_URL = process.env.REACT_APP_BACKEND_API_URL;
 
 export const saveUserInfo = async ({ email, ime, prezime, dateBirth }: any) => {
   try {
-    const response = await fetch(
-      "http://localhost:5000/user/update-user-info",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, ime, prezime, dateBirth }),
-      }
-    );
+    const response = await fetch(`${API_URL}/user/update-user-info`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, ime, prezime, dateBirth }),
+    });
 
     if (!response.ok) {
       throw new Error("Failed to update user info");
