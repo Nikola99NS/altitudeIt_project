@@ -1,7 +1,6 @@
 --- instrukcije za pokretanje react-a na frontendu ---
 1. npm install
 2. npm start
-3. npm install cors
    
 U rutu react aplikacije, potrebno je kreirati .env fajl, i dodati :
 
@@ -24,4 +23,4 @@ DB_PASSWORD=AVNS_4khgT-jGU6QVOcuQvX6
 
 Kredencijali za admina su : Admin@gmail.com, a password je : admin
 
-Za potrebe projekta korišćena je online baza Aiven console, tako da nije potrebno lokalno podešavati bazu.
+Portal preko koga sam dobio pristup online MySql bazi je Aiven console.
