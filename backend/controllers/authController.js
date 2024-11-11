@@ -84,13 +84,13 @@ const login = async(req, res) => {
             }
             // Ako je korisnik vec verifikovan,  proveri da li je potrebna 2FA
             const [getTwoFAStatus] = await userModel.get2FaStatus(user.id);
-            console.log('ovo je status', getTwoFAStatus)
             if (getTwoFAStatus.twoFA) {
                 const twoFACode = Math.floor(100000 + Math.random() * 900000);
                 await userModel.insertTwoFACode(user.id, twoFACode);
                 await sendOrderConfirmationEmail(email, twoFACode);
                 return res.json({ success: false, message: "Potrebno je da unesete kod koji smo vam poslali na mejl", twoFACode: twoFACode })
             }
+
             return res.status(200).json({
                 success: true,
                 message: 'Login successful',
@@ -100,7 +100,7 @@ const login = async(req, res) => {
                     ime: user.ime,
                     prezime: user.prezime,
                     email: user.email,
-                    dateBirth: user.datum_rodjenja,
+                    datum_rodjenja: user.datum_rodjenja,
                     urlSlike: user.urlSlike,
                     role_id: user.role_id
                 }

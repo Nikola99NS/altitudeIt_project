@@ -16,7 +16,6 @@ const insertUser = async(firstName, lastName, email, hashedPassword, birthDate) 
 
 const setIsActive = async(userId) => {
     const response = await db.query('UPDATE User SET isActive = true WHERE id = ?', [userId]);
-    console.log('sta je ovo', response)
 }
 
 const updatePassword = async(hashedPassword, email) => {
@@ -86,7 +85,6 @@ const checkTwoFACode = async(email, password, twoFACode) => {
 }
 
 const change2FAStatus = async(email, status) => {
-    console.log(email, status)
     return await db.query("update User set twoFA = ? where email = ?", [status, email]);
 
 }

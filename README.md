@@ -22,5 +22,6 @@ JWT_SECRET=tv0b7ff9e267dc241a575cb5d36453c17e3139cc46ee8e79e1a1f993c0287b30
 ADMIN_PASSWORD=admin                                                                      
 DB_PASSWORD=AVNS_4khgT-jGU6QVOcuQvX6                                                                          
 
+Kredencijali za admina su : Admin@gmail.com, a password je : admin
 
 Za potrebe projekta korišćena je online baza Aiven console, tako da nije potrebno lokalno podešavati bazu.

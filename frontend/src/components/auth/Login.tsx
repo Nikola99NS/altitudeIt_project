@@ -63,6 +63,7 @@ const Login: React.FC = () => {
             alert(responseData.message);
 
         } catch (err: any) {
+            console.log(err.message)
             setError(err.message);
         }
     };
