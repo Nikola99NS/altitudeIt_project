@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { checkEmailVerification, checkTwoFACode, loginUser } from '../../services/authService';
+import { saveUserData } from '../../utils/storageUtils';
 import VerificationCodeInput from './VerificationCodeInput';
 
 const API_URL = process.env.REACT_APP_BACKEND_API_URL;
@@ -26,7 +27,6 @@ const Login: React.FC = () => {
             const checkVerificationStatus = async () => {
                 try {
                     const isVerified = await checkEmailVerification(email);
-                    console.log('is verified', isVerified)
                     if (!isVerified) {
                         setShowVerificationCode(true);
                         setError('Vaš nalog nije verifikovan. Unesite verifikacioni kod.');
@@ -43,50 +43,24 @@ const Login: React.FC = () => {
         e.preventDefault();
         try {
             if (twoFACode !== '') {
-                const user = await checkTwoFACode({ email, password, twoFACode })
-                console.log('ovo je user', user)
+                const user = await checkTwoFACode({ email, password, twoFACode });
                 if (user.success) {
-                    sessionStorage.setItem("token", user.token)
-                    localStorage.setItem('user', JSON.stringify({
-                        id: user.user.id,
-                        ime: user.user.ime,
-                        prezime: user.user.prezime,
-                        email: user.user.email,
-                        dateBirth: new Date(user.user.datum_rodjenja).toISOString().slice(0, 10),
-                        urlSlike: API_URL + user.user.urlSlike,
-                        roleId: user.user.role_id,
-                        isActive: user.user.isActive,
-                        twoFA: user.user.twoFA
-                    }));
-                    navigate('/')
+                    saveUserData(user.user, user.token);
+                    navigate('/');
                     return;
                 } else {
-                    alert(user.message)
+                    alert(user.message);
                 }
             }
 
             const responseData = await loginUser({ email, password, verificationCode });
             if (responseData.success) {
-                console.log('usli smo negde')
-                sessionStorage.setItem("token", responseData.token)
-                localStorage.setItem('user', JSON.stringify({
-                    id: responseData.user.id,
-                    ime: responseData.user.ime,
-                    prezime: responseData.user.prezime,
-                    email: responseData.user.email,
-                    dateBirth: new Date(responseData.user.dateBirth).toISOString().slice(0, 10),
-                    urlSlike: API_URL + responseData.user.urlSlike,
-                    roleId: responseData.user.role_id,
-                    isActive: responseData.user.isActive,
-                    twoFA: 0
-                }));
-                navigate('/')
+                saveUserData(responseData.user, responseData.token);
+                navigate('/');
             } else if (responseData.twoFACode > 0) {
-                // localStorage.setItem("trenutni2FACode", responseData.twoFACode)
                 setShowTwoFACode(true);
             }
-            alert(responseData.message)
-            // navigate('/')
+            alert(responseData.message);
 
         } catch (err: any) {
             setError(err.message);

@@ -27,7 +27,6 @@ const Register: React.FC = () => {
             await registerUser({ firstName, lastName, email, password, birthDate });
             setSuccessMessage('Uspešno ste se registrovali!');
 
-            // Preusmeravanje na stranicu za prijavu
             navigate('/login', { state: { email, notVerified: true } });
 
         } catch (err: any) {
